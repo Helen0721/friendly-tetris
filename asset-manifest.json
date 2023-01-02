@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/friendly-tetris/static/css/main.6aea054d.css",
+    "main.js": "/friendly-tetris/static/js/main.2ec8825d.js",
+    "index.html": "/friendly-tetris/index.html",
+    "main.6aea054d.css.map": "/friendly-tetris/static/css/main.6aea054d.css.map",
+    "main.2ec8825d.js.map": "/friendly-tetris/static/js/main.2ec8825d.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6aea054d.css",
+    "static/js/main.2ec8825d.js"
+  ]
+}
