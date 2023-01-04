@@ -68,17 +68,18 @@ class Board extends React.Component<BoardProps, BoardState>{
       this.state ={
         boardState: new Array<string>(props.rows*props.cols).fill(''),
         gameOver: false,
+        paused: true,
       };
       this.piece = undefined;
       this.pieceLeftCol = -1;
       this.pieceTopRow = -1;
       this.pieceColor = '';
-      this.paused = false;
+      this.paused = true;
     }
 
     newGame(){
         clearInterval(nIntervId);
-        this.setState({boardState: new Array<string>(this.props.rows*this.props.cols).fill(''), gameOver: false,})
+        this.setState({boardState: new Array<string>(this.props.rows*this.props.cols).fill(''), gameOver: false, paused: true})
         this.piece = undefined;
         this.pieceLeftCol = -1;
         this.pieceTopRow = -1;
@@ -94,30 +95,44 @@ class Board extends React.Component<BoardProps, BoardState>{
     }
 
     onKeyPress(): void{
+      
         document.addEventListener('keydown',(e)=>
           {
             if (e.key==='r' || e.key==='R') this.newGame();
             else if (this.state.gameOver) return;
             else if (e.key==='0' || e.key==='1'||e.key==='2'||e.key==='3'||e.key==='4' || e.key==='5' || e.key==='6') {
-              if (this.piece!==undefined) this.loadNewPiece(this.state.boardState,Number(e.key),false);
-              else this.loadNewPiece(this.state.boardState,Number(e.key),true); 
+              this.loadNewPiece(this.state.boardState,Number(e.key),true); 
             }
-            else if (this.piece!==undefined && e.key==='ArrowDown') this.handleMovePiece(false, 1,0);
-            else if (this.piece!==undefined && this.movePiece(1,0)[0] && e.key==='ArrowLeft') this.handleMovePiece(false,0,-1);
-            else if (this.piece!==undefined && this.movePiece(1,0)[0] && e.key==='ArrowRight') this.handleMovePiece(false,0,1);
-            else if (this.piece!==undefined && this.movePiece(1,0)[0] && e.key==='ArrowUp') this.handleRotatePiece();
-            else if (this.piece!==undefined && e.key===' ') this.handleMovePiece(true,1,0);
             else if (e.key==='s' || e.key==='S') this.takeStep();
             else if (e.key === 'p'|| e.key==='P') {
-              if (!this.paused) nIntervId = setInterval(()=>this.takeStep(),500) as unknown as number;
-              else clearInterval(nIntervId);
-              this.paused = !this.paused;
-            };
+              console.log("p pressed");
+              this.handlePause();
+            }
+            else if(this.piece===undefined) return;
+            else if (e.key==='ArrowDown') this.handleMovePiece(false, 1,0);
+            else if (e.key===' ') {
+              console.log('space pressed');
+              console.log("pieceTopRow", this.pieceTopRow);
+              this.handleMovePiece(true,1,0);
+            }else if (!this.movePiece(1,0)[0]) return;
+            else if (e.key==='ArrowLeft') this.handleMovePiece(false,0,-1);
+            else if (e.key==='ArrowRight') this.handleMovePiece(false,0,1);
+            else if (e.key==='ArrowUp') this.handleRotatePiece();
           }
         )
     }
 
+    handlePause(): void{
+      console.log("handlePause...");
+      console.log("game paused", this.state.paused, "timerID:", nIntervId);
+      if (this.state.paused) nIntervId = setInterval(()=>this.takeStep(),500) as unknown as number;
+      else clearInterval(nIntervId);
+      console.log("(new) timer Id:",nIntervId);
+      this.setState({paused: !this.state.paused});
+    }
+
     clearPrevPiece(boardState: string[]): string[]|undefined {
+      //console.log("clearing piece",this.piece);
         const board = [...boardState];
         if (board===undefined) return undefined;
         const oldPiece = this.piece as boolean[][];
@@ -134,6 +149,7 @@ class Board extends React.Component<BoardProps, BoardState>{
     loadNewPiece(boardState: string[], nextPieceIndex: number, clear: boolean): void{
         if (this.state.gameOver) return;
         let board;
+        //console.log("clear",clear);
         const i = nextPieceIndex===-1? getNextPieceIndex(this.props.tetrisPieces.length): nextPieceIndex;
         if (clear && this.piece!==undefined) {
           board = this.clearPrevPiece(boardState) as string[];
@@ -156,10 +172,13 @@ class Board extends React.Component<BoardProps, BoardState>{
     }
 
     takeStep(){
+      console.log('taking step');
         if(this.piece===undefined) this.loadNewPiece(this.state.boardState,-1, false);
         else{
             const canMoveCurrPiece = this.handleMovePiece(false,1,0);
+            console.log('canMoveCurrPiece:',canMoveCurrPiece);
             if(!canMoveCurrPiece){
+                console.log("cannot move piece");
                 const board = this.clearFullRow();
                 const isGameOver = this.checkGameOver(board);
                 if (isGameOver) clearInterval(nIntervId);
@@ -170,6 +189,7 @@ class Board extends React.Component<BoardProps, BoardState>{
     }
 
     clearFullRow(){
+      console.log("clearing full row");
         let row = this.props.rows-1;
         let board = this.state.boardState.slice();
         //const emptyRow = new Array<string>(this.props.cols).fill('');
@@ -193,7 +213,9 @@ class Board extends React.Component<BoardProps, BoardState>{
     }
 
     handleMovePiece(repeat: boolean, drow:number,dcol:number): boolean{
+        console.log("handleMovePiece...");
         let [canMove, board, newLeftCol, newTopRow] = this.movePiece(drow,dcol);
+        console.log(canMove, drow, dcol);
         if (canMove && repeat){
             [this.pieceLeftCol, this.pieceTopRow] = [newLeftCol, newTopRow];
             this.setState({boardState: board},()=>this.handleMovePiece(repeat,drow,dcol));
@@ -204,6 +226,7 @@ class Board extends React.Component<BoardProps, BoardState>{
             this.setState({boardState: board});
             return true;
         }
+        console.log("returning false");
         return false;
     }
 
@@ -291,15 +314,27 @@ class Board extends React.Component<BoardProps, BoardState>{
         return cells;
     }
     render(){
-        let [status, fill] = this.state.gameOver? ['Game Over!','red'] : ['Welcome to Tetris','black'];
+        let status;
+        let fill;
+        if (this.state.gameOver) [status,fill] = ['Game Over!','red'];
+        else if(this.state.paused) [status,fill] = ['Game paused','black'];
+        else [status,fill] = ['Playing game',`#A61B29`];
         return( 
             <div> 
-                <div className = "App-header" style = {{color: fill}}> {status} </div>
+                <div className = "App-header"> {'Welcome to Tetris!'} </div>
                 <button 
                     onClick = {()=>this.newGame()}
-                    style = {{margin: `2em`}}>
-                        Click or Press 'r' or 'R' to restart
+                    style = {{margin: `1em`, blockSize: '2em'}}>
+                        Click or Press 'r' or 'R' to reset
                 </button>
+                <div>
+                <div
+                    //onClick = {()=>{this.handlePause()}}
+                    style = {{margin: `0.5em`, fontFamily: 'serif', color: 'green'}}>
+                            Press 'p' or 'P' to pause/unpause
+                    </div>
+                </div>
+                <div style = {{color: fill, fontFamily: 'cursive', margin: `none`, fontSize: `1.5em`}}> {status}</div>
                 <div className = 'Board'
                 style = {{gridTemplateColumns: `repeat(${this.props.cols}, 1.2fr)`, 
                           width: `${17 * 2 * this.props.cols}px`,

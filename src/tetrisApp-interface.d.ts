@@ -14,6 +14,7 @@ const piecesColor = ''| 'red'| 'yellow' | 'magenta' | 'pink'| 'cyan'| 'green'| '
 interface BoardState{
     boardState: pieceColor[];
     gameOver: boolean;
+    paused: boolean;
 }
 
 type tetrisPiecesOutput = [boolean[][][], string[]];
