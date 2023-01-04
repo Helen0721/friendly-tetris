@@ -15,6 +15,7 @@ interface BoardState{
     boardState: pieceColor[];
     gameOver: boolean;
     paused: boolean;
+    darkMode: boolean;
 }
 
 type tetrisPiecesOutput = [boolean[][][], string[]];

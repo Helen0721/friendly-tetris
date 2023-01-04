@@ -2,7 +2,17 @@
   margin: 2rem auto;
   text-align: center;
   font-weight: bold;
-  color: #000
+}
+
+.dark,
+.dark .App {
+  background-color: rgb(237, 203, 159);
+  transition: all 0.2s ease;
+}
+
+.TetrisHeader{
+  color: #cf7363;
+  margin: auto;
 }
 
 .Cell{
@@ -15,41 +25,36 @@
   width: 32px;
 }
 
+.newGame{
+  block-size: 2em;
+  transition: all 0.2s ease;
+}
+
 .Board {
-  background-color: antiquewhite;
   display: grid;
   border: solid;
-  margin: 2rem auto;
+  margin: 1.7rem auto;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.dark-mode-toggle {
+  width: 80px;
+  height: 36px;
+  border-radius: 50px;
+  top: 0;
+  left: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.dark-mode-slider {
+  height: 30px;
+  width: 30px;
+  border-radius: 50%;
+  background-color: #2e3440;
+  display: flex;
+  position: relative;
+  transform: translateX(0px);
+  transition: all 0.2s ease;
 }
 
-.App-header >.Board {
-  background-color: antiquewhite;
-  min-height: 100vh;
-  /* display: flex; */
-  /* flex-direction: column; */
-  font-size: calc(10px + 2vmin);
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.dark .dark-mode-slider {
+  transform: translateX(45px);
 }

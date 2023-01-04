@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './tetrisApp.css';
 
 let handlerDidMount = false;
@@ -69,6 +69,7 @@ class Board extends React.Component<BoardProps, BoardState>{
         boardState: new Array<string>(props.rows*props.cols).fill(''),
         gameOver: false,
         paused: true,
+        darkMode: true,
       };
       this.piece = undefined;
       this.pieceLeftCol = -1;
@@ -95,34 +96,44 @@ class Board extends React.Component<BoardProps, BoardState>{
     }
 
     onKeyPress(): void{
-      
         document.addEventListener('keydown',(e)=>
           {
-            if (e.key==='r' || e.key==='R') this.newGame();
+            e.preventDefault();
+            if (e.key==='n' || e.key==='N') this.newGame();
             else if (this.state.gameOver) return;
             else if (e.key==='0' || e.key==='1'||e.key==='2'||e.key==='3'||e.key==='4' || e.key==='5' || e.key==='6') {
               this.loadNewPiece(this.state.boardState,Number(e.key),true); 
             }
             else if (e.key==='s' || e.key==='S') this.takeStep();
-            else if (e.key === 'p'|| e.key==='P') {
-              console.log("p pressed");
+            else if (e.key ==='Enter') this.handleMovePiece(true, 1,0);
+            else if (e.key === ' ') {
+              console.log("space bar pressed");
               this.handlePause();
             }
             else if(this.piece===undefined) return;
             else if (e.key==='ArrowDown') this.handleMovePiece(false, 1,0);
-            else if (e.key===' ') {
-              console.log('space pressed');
-              console.log("pieceTopRow", this.pieceTopRow);
-              this.handleMovePiece(true,1,0);
-            }else if (!this.movePiece(1,0)[0]) return;
+            else if (!this.movePiece(1,0)[0]) return;
             else if (e.key==='ArrowLeft') this.handleMovePiece(false,0,-1);
             else if (e.key==='ArrowRight') this.handleMovePiece(false,0,1);
             else if (e.key==='ArrowUp') this.handleRotatePiece();
           }
         )
+        document.body.classList.add('dark');
     }
 
+    handleDarkMode(): void{
+      if (this.state.darkMode) document.body.classList.remove('dark');
+      else document.body.classList.add('dark');
+      this.setState({darkMode: !this.state.darkMode});
+    }
+
+    // componentDidUpdate(prevProps: Readonly<BoardProps>, prevState: Readonly<BoardState>, snapshot?: any): void {
+    //   if(prevState.darkMode!==this.state.darkMode) console.log('dark mode changed');
+    //   if(prevState.boardState!==this.state.boardState) console.log('board changed');
+    // }
+
     handlePause(): void{
+      console.trace();
       console.log("handlePause...");
       console.log("game paused", this.state.paused, "timerID:", nIntervId);
       if (this.state.paused) nIntervId = setInterval(()=>this.takeStep(),500) as unknown as number;
@@ -172,13 +183,11 @@ class Board extends React.Component<BoardProps, BoardState>{
     }
 
     takeStep(){
-      console.log('taking step');
+      //console.log('taking step');
         if(this.piece===undefined) this.loadNewPiece(this.state.boardState,-1, false);
         else{
             const canMoveCurrPiece = this.handleMovePiece(false,1,0);
-            console.log('canMoveCurrPiece:',canMoveCurrPiece);
             if(!canMoveCurrPiece){
-                console.log("cannot move piece");
                 const board = this.clearFullRow();
                 const isGameOver = this.checkGameOver(board);
                 if (isGameOver) clearInterval(nIntervId);
@@ -213,9 +222,9 @@ class Board extends React.Component<BoardProps, BoardState>{
     }
 
     handleMovePiece(repeat: boolean, drow:number,dcol:number): boolean{
-        console.log("handleMovePiece...");
+        //console.log("handleMovePiece...");
         let [canMove, board, newLeftCol, newTopRow] = this.movePiece(drow,dcol);
-        console.log(canMove, drow, dcol);
+        //console.log(canMove, drow, dcol);
         if (canMove && repeat){
             [this.pieceLeftCol, this.pieceTopRow] = [newLeftCol, newTopRow];
             this.setState({boardState: board},()=>this.handleMovePiece(repeat,drow,dcol));
@@ -226,7 +235,7 @@ class Board extends React.Component<BoardProps, BoardState>{
             this.setState({boardState: board});
             return true;
         }
-        console.log("returning false");
+        //console.log("returning false");
         return false;
     }
 
@@ -316,25 +325,33 @@ class Board extends React.Component<BoardProps, BoardState>{
     render(){
         let status;
         let fill;
+        let headerFill = 'black';
         if (this.state.gameOver) [status,fill] = ['Game Over!','red'];
-        else if(this.state.paused) [status,fill] = ['Game paused','black'];
-        else [status,fill] = ['Playing game',`#A61B29`];
+        else if (!this.state.paused) [status,fill] = ['Playing game',`#A61B29`];
+        else{
+          if (this.state.darkMode) [status,fill, headerFill] = ['Game paused',`#804d9e`, `#7090ca`];
+          else [status,fill, headerFill] = ['Game paused','black',`#b95948`];
+        }
+        
         return( 
             <div> 
-                <div className = "App-header"> {'Welcome to Tetris!'} </div>
-                <button 
+              <div className = "TetrisHeader" > {'Welcome to Tetris!'} </div>
+              <button className = 'dark-mode-toggle'
+                  onClick = {()=>this.handleDarkMode()}
+                  > change color </button>
+                <button className = 'newGame'
                     onClick = {()=>this.newGame()}
-                    style = {{margin: `1em`, blockSize: '2em'}}>
-                        Click or Press 'r' or 'R' to reset
+                    style = {{margin: `0.7em`, blockSize: '2em', color: 'green'}}>
+                        Click or Press 'n' or 'N' for new game
                 </button>
                 <div>
-                <div
-                    //onClick = {()=>{this.handlePause()}}
-                    style = {{margin: `0.5em`, fontFamily: 'serif', color: 'green'}}>
-                            Press 'p' or 'P' to pause/unpause
-                    </div>
+                <button
+                    onClick = {()=>{this.handlePause()}}
+                    style = {{margin: `0.7em`}}>
+                            Click or Press spacebar to pause/unpause
+                    </button>
                 </div>
-                <div style = {{color: fill, fontFamily: 'cursive', margin: `none`, fontSize: `1.5em`}}> {status}</div>
+                <div style = {{color: fill, fontFamily: 'cursive', fontSize: `1.3em`}}> {status}</div>
                 <div className = 'Board'
                 style = {{gridTemplateColumns: `repeat(${this.props.cols}, 1.2fr)`, 
                           width: `${17 * 2 * this.props.cols}px`,
