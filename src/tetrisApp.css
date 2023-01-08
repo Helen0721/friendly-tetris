@@ -1,18 +1,97 @@
 .App {
-  margin: 2rem auto;
-  text-align: center;
+  margin: 1rem auto;
   font-weight: bold;
+  /* background-image: linear-gradient(to right, #DECBA4, #3E5151); */
 }
 
 .dark,
 .dark .App {
-  background-color: rgb(237, 203, 159);
+  background-color: #decba4;
   transition: all 0.2s ease;
 }
 
 .TetrisHeader{
-  color: #cf7363;
+  /* color: #cf7363; */
+  margin: 2vw 3vw 1vw;
+  padding: 0.6rem;
+  text-align: center;
+  font-size: 1.5em;
+  font-family: 'Aclonica';
+  font-weight: normal;
+  background: linear-gradient(to bottom right, #d47153 50%, #CF8276 43%);
+}
+
+.Tetris-body
+{
+  text-align: center;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.NavigationBar{
+  width: 30vw;
+}
+
+.BoardSize{
+  display: flex;
+  margin: 1em;
+  height: 1.8em;
+}
+
+.Level{
+  display: flex;
+  margin: 1em;
+}
+
+.DarkModeButton{
   margin: auto;
+}
+
+.dark-mode-toggle {
+  height: 2em;
+  border-radius: 20%;
+}
+
+.NewGame{
+  /* transition: all 0.2s ease; */
+  text-align: center;
+}
+
+.NewGameButton{
+  margin: 0.7em;
+  border-radius: 20%;
+  width: 10em;
+  height: 3em;
+  color: green;
+}
+
+.handlePause{
+  text-align: center;
+}
+
+.HandlePauseButton{
+  margin: 0.5em;
+  border-radius: 20%;
+  width: 10em;
+  height: 4.2em;
+  color: rgb(58, 113, 185);
+}
+
+/* .Game{
+  margin: auto; 
+} */
+
+.GameStatus{
+  text-align: center;
+  font-size: 1.5em;
+  font-family: cursive;
+  margin: 0.5rem auto;
+}
+
+.Score{
+  font-size: 1.2em;
+  color:#91461d;
+  margin: 0.5rem 0 1em;
 }
 
 .Cell{
@@ -23,25 +102,19 @@
   font-size: 1rem;
   height: 32px;
   width: 32px;
+  box-sizing: content-box;
 }
 
-.newGame{
-  block-size: 2em;
-  transition: all 0.2s ease;
+.Cell::after{
+  box-sizing: content-box;
 }
 
 .Board {
   display: grid;
-  border: solid;
-  margin: 1.7rem auto;
-}
-
-.dark-mode-toggle {
-  width: 80px;
-  height: 36px;
-  border-radius: 50px;
-  top: 0;
-  left: 0;
+  margin:  auto;
+  border: solid; 
+  text-align: center;
+  box-sizing: content-box;
 }
 
 .dark-mode-slider {

@@ -16,6 +16,18 @@ interface BoardState{
     gameOver: boolean;
     paused: boolean;
     darkMode: boolean;
+    score: number;
+    rows: number;
+    cols: number;
+    //level: string;
+    level: 'easy'| 'medium' | 'hard' | 'expert';
+}
+
+interface GameState{
+    // score: number;
+    // gameOver: boolean;
+    // paused: boolean;
+    darkMode: boolean;
 }
 
 type tetrisPiecesOutput = [boolean[][][], string[]];
