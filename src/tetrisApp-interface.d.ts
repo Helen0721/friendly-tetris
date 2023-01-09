@@ -13,6 +13,12 @@ const piecesColor = ''| 'red'| 'yellow' | 'magenta' | 'pink'| 'cyan'| 'green'| '
 
 interface BoardState{
     boardState: pieceColor[];
+
+    piece: undefined|boolean[][],
+    pieceLeftCol: number,
+    pieceTopRow: number,
+    pieceColor: piecesColor,
+
     gameOver: boolean;
     paused: boolean;
     darkMode: boolean;
