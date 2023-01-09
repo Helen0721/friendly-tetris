@@ -7,11 +7,6 @@ import type { MenuProps } from 'antd';
 import { Button, Dropdown, Space } from 'antd';
 
 const levels = {'easy': 600, 'medium': 500, 'hard':400, 'expert': 300};
-// let stateStillUpdating = true;
-// function checkStateFinished(): void{
-//   stateStillUpdating = true; 
-// }
-
 let nIntervId: number;
 
 function loadPieces(): tetrisPiecesOutput{
@@ -55,103 +50,89 @@ function rotate2dListClockwise(oldPiece: boolean[][]){
     return newPiece;
 }
   
-function getNextPieceIndex(piecesTotalNum: number): number{
-    return Math.floor(Math.random()*piecesTotalNum);
-}
-
 function Cell(props: CellProps): JSX.Element {
-    const fill = props.value===''? 'white' : props.value;
-    return(
-      <div className="Cell"
-        style = {{backgroundColor: fill}}> </div>
-    );
+  const fill = props.value===''? 'white' : props.value;
+  return(
+    <div className="Cell"
+      style = {{backgroundColor: fill}}> </div>
+  );
 }
 
 class Board extends React.Component<BoardProps, BoardState>{
-    piece: boolean[][]|undefined;
-    pieceLeftCol: number
-    pieceTopRow: number;
-    pieceColor: string;
     constructor(props: BoardProps){
       super(props);
       this.state ={
         boardState: new Array<string>(props.rows*props.cols).fill(''),
+        
+        piece: undefined,
+        pieceLeftCol: -1,
+        pieceTopRow: -1,
+        pieceColor: '',
+
+        
         gameOver: false,
         paused: true,
         darkMode: true,
         score: 0,
         rows: this.props.rows,
         cols: this.props.cols,
-        level: 'easy',
+        level: 'medium',
       };
-      this.piece = undefined;
-      this.pieceLeftCol = -1;
-      this.pieceTopRow = -1;
-      this.pieceColor = '';
       this.onKeyPressWrapper = this.onKeyPressWrapper.bind(this);
       this.handleDarkMode = this.handleDarkMode.bind(this);
+      this.movePiece = this.movePiece.bind(this);
       document.body.classList.add('dark');
     }
 
     newGame(){
-        clearInterval(nIntervId);
-        this.setState({boardState: new Array<string>(this.state.rows*this.state.cols).fill(''), gameOver: false, paused: true, score: 0})
-        this.piece = undefined;
-        this.pieceLeftCol = -1;
-        this.pieceTopRow = -1;
-        this.pieceColor = '';
+      clearInterval(nIntervId);
+      this.setState({boardState: new Array<string>(this.state.rows*this.state.cols).fill(''), 
+                      piece: undefined,
+                      pieceLeftCol: -1,
+                      pieceTopRow: -1,
+                      pieceColor: '',
+                      gameOver: false, 
+                      paused: true, 
+                      score: 0})
     }
 
     componentDidMount(): void {
-      //console.log("mount board");
       document.addEventListener('keydown', this.onKeyPressWrapper);
     }
 
     componentWillUnmount(): void {
-      //console.log("unmount board");
       document.removeEventListener('keydown',this.onKeyPressWrapper);
       clearInterval(nIntervId);
     }
 
     onKeyPressWrapper(e: KeyboardEvent): void{
-      if (e.key===' '|| e.key==='enter') e.preventDefault();
       this.onKeyPress(e.key);
     }
 
     onKeyPress(key: string): void{
-      // console.log(key);
+      //console.log(key);
       if (key==='n' || key==='N') this.newGame();
       else if (this.state.gameOver) return;
       //else if (key==='0' || key==='1'||key==='2'||key==='3'||key==='4' || key==='5' || key==='6') {
       //  this.loadNewPiece(this.state.boardState,Number(key),true); 
       //}
-      else if (key==='s' || key==='S') this.takeStep();
-      else if (key ==='Enter') this.handleMovePiece(true, 1,0);
       else if (key === ' ') this.handlePause();
-      else if(this.piece===undefined) return;
-      else if (key==='ArrowDown') this.handleMovePiece(false, 1,0);
+      else if (key==='s' || key==='S') this.takeStep();
+      else if(this.state.piece===undefined) return;
+      else if (key ==='Enter') this.handleMovePiece(true,1,0);
+      else if (key==='ArrowDown') this.handleMovePiece(false,1,0);
       else if (!this.movePiece(1,0)[0]) return;
       else if (key==='ArrowLeft') this.handleMovePiece(false,0,-1);
       else if (key==='ArrowRight') this.handleMovePiece(false,0,1);
-      else if (key==='ArrowUp') this.handleRotatePiece();
+      else if (key==='ArrowUp') this.rotatePieceClockwise();
   }
 
     handlePause(): void{
-      // console.trace();
-      // console.log("handlePause...");
-      // console.log("game paused", this.state.paused, "timerID:", nIntervId);
-
       if (this.state.paused){
-         
         nIntervId = setInterval(()=>this.takeStep(),levels[this.state.level]) as unknown as number;
       }
-      else {
-        // console.log("pause game");
-        clearInterval(nIntervId);
-      }
+      else clearInterval(nIntervId);
       this.setState({paused: !this.state.paused});
-      // console.log("(new) timer Id:",nIntervId);
-      // this.props.updatePause();
     }
 
     handleDarkMode(): void{
@@ -160,63 +141,62 @@ class Board extends React.Component<BoardProps, BoardState>{
       this.setState({darkMode: !this.state.darkMode});
     }
 
-    clearPrevPiece(boardState: string[]): string[]|undefined {
-      //console.log("clearing piece",this.piece);
-        const board = [...boardState];
-        if (board===undefined) return undefined;
-        const oldPiece = this.piece as boolean[][];
-     
-        for (let row = 0; row < oldPiece.length; row++){
-            for (let col = 0; col< oldPiece[0].length; col++){
-                let idxInBoard = rc_idx(row+this.pieceTopRow,col+this.pieceLeftCol,this.state.cols);
-                if (oldPiece[row][col]) board[idxInBoard] = '';
-           }
-        }
-        return board;
+    handleMovePiece(repeat: boolean, drow: number, dcol: number): boolean{
+      let [canMove,newLeftCol, newTopRow] = this.movePiece(drow,dcol);
+      if (repeat && canMove) {
+        this.setState({pieceLeftCol: newLeftCol, pieceTopRow: newTopRow}, ()=>this.handleMovePiece(repeat, drow,dcol));
+        return true;
+      }
+      else if(canMove) {
+        this.setState({pieceLeftCol: newLeftCol, pieceTopRow: newTopRow});
+        return true;
+      }
+      return false;
     }
 
-    loadNewPiece(boardState: string[], nextPieceIndex: number, clear: boolean): void{
-        if (this.state.gameOver) return;
-        let board;
-        //console.log("clear",clear);
-        const i = nextPieceIndex===-1? getNextPieceIndex(this.props.tetrisPieces.length): nextPieceIndex;
-        if (clear && this.piece!==undefined) {
-          board = this.clearPrevPiece(boardState) as string[];
-        } else{
-          board = boardState.slice() as string[];
-        }
-        const newPiece: boolean[][]= this.props.tetrisPieces[i];
-        const fill = this.props.tetrisPieceColors[i];
-        const leftCol = Math.floor(this.state.cols/2) - Math.ceil(newPiece[0].length/2);
-        const topRow = 0;
-    
-        for (let row = 0; row < newPiece.length; row++){
-          for (let col = 0; col< newPiece[0].length; col++){
-            let idxInBoard = rc_idx(row+topRow,col+leftCol,this.state.cols);
-            if (newPiece[row][col]) board[idxInBoard] = fill;
-          }
-        }
-        [this.piece, this.pieceLeftCol, this.pieceTopRow, this.pieceColor]= [newPiece, leftCol, topRow, fill];
-        this.setState({boardState: board});
+    movePiece(drow: number, dcol: number): [boolean, number, number] {
+      if (this.state.piece===undefined) return [false, -1, -1];
+      //console.log('piece old position:', this.state.pieceLeftCol, this.state.pieceTopRow);
+      const piece = this.state.piece.slice() as boolean[][];
+      let [newLeftCol, newTopRow]= [this.state.pieceLeftCol+dcol, this.state.pieceTopRow+drow];
+      //console.log('new piece position:', newLeftCol, newTopRow);
+      if (!this.moveIsLegal(piece,newLeftCol, newTopRow)) return [false, -1,-1];
+      return [true, newLeftCol, newTopRow];
+    }
+
+    loadNewPiece(): void{
+      if (this.state.gameOver) return;
+      const i = Math.floor(Math.random()*this.props.tetrisPieces.length);
+      const newPiece: boolean[][]= this.props.tetrisPieces[i];
+      const fill = this.props.tetrisPieceColors[i];
+      const leftCol = Math.floor(this.state.cols/2) - Math.ceil(newPiece[0].length/2);
+      this.setState({piece: newPiece, pieceColor: fill, pieceLeftCol: leftCol, pieceTopRow: 0});
     }
 
     takeStep(){
-      // console.log('taking step');
-      if(this.piece===undefined) this.loadNewPiece(this.state.boardState,-1, false);
-      else{
-          const canMoveCurrPiece = this.handleMovePiece(false,1,0);
-          if(!canMoveCurrPiece){
-              const board = this.clearFullRow();
-              const isGameOver = this.checkGameOver(board);
-              if (isGameOver) clearInterval(nIntervId);
-              else this.loadNewPiece(board,-1, false);  //setState is called in loadNewPiece
-              this.setState({gameOver: isGameOver});
-          }
+      //console.log('taking step');
+      if(this.state.piece===undefined) this.loadNewPiece();
+      if(!this.handleMovePiece(false,1,0)) {
+        this.handlePlacePiece();
+        if(!this.state.gameOver) this.loadNewPiece();
       }
     }
 
+    handlePlacePiece(): void{
+      if (this.state.piece===undefined) return;
+      const board = [...this.state.boardState];
+      const piece = this.state.piece as boolean[][];
+      for (let row = 0; row < piece.length; row++){
+        for (let col = 0; col< piece[0].length; col++){
+          let idxInBoard = rc_idx(row+this.state.pieceTopRow,col+this.state.pieceLeftCol,this.state.cols);
+          if (piece[row][col]) board[idxInBoard] = this.state.pieceColor;
+        }
+      }
+      this.setState({boardState: board}, ()=>this.clearFullRow());
+    }
+
     clearFullRow(){
-      // console.log("clearing full row");
+      //console.log("clearing full row");
       let row = this.state.rows-1;
       let board = this.state.boardState.slice();
       let cntFullRow = 0;
@@ -237,104 +217,52 @@ class Board extends React.Component<BoardProps, BoardState>{
         else row--;
         //console.log(row);
       }
+      if (cntFullRow!=0){
+
+      }
       //console.log('Cleared board:',board);
-      const weight = 1;
+      // const weight = scoreWeights[this.state.level];
+      //console.log("weight", weight);
       const addedScores = [0,10,30,50,80,120,160,220];
-      this.setState({score: this.state.score+addedScores[cntFullRow]*weight});
-      //score += cnt * 10 * weight(easy: 1, medium: 1.2, hard: 1.5)
-      return board;
-    }
-    // componentDidUpdate(prevProps: BoardProps, prevState: BoardState){
-    //   console.log(prevState.boardState, this.state.boardState);
-    // }
-
-    handleMovePiece(repeat: boolean, drow:number,dcol:number): boolean{
-        //console.log("handleMovePiece...");
-        let [canMove, board, newLeftCol, newTopRow] = this.movePiece(drow,dcol);
-        //console.log(canMove, drow, dcol);
-        if (canMove && repeat){
-            [this.pieceLeftCol, this.pieceTopRow] = [newLeftCol, newTopRow];
-            this.setState({boardState: board},()=>this.handleMovePiece(repeat,drow,dcol));
-            return true;
-        }
-        else if(canMove) {
-            [this.pieceLeftCol, this.pieceTopRow] = [newLeftCol, newTopRow];
-            this.setState({boardState: board});
-            return true;
-        }
-        //console.log("returning false");
-        return false;
+      this.setState({boardState: board, score: this.state.score+addedScores[cntFullRow]}, ()=>this.checkGameOver());
     }
 
-    handleRotatePiece(){
-        const[board,newPiece,newLeftCol,newTopRow] = this.rotatePieceClockwise();
-        if (board!==undefined) {
-            [this.piece, this.pieceLeftCol, this.pieceTopRow] = [newPiece, newLeftCol, newTopRow];
-            this.setState({boardState:board});
+    checkGameOver():void{
+      for(let col = 0; col< this.state.cols; col++) {
+        if (this.state.boardState[col]!=='') {
+          clearInterval(nIntervId);
+          this.setState({gameOver: true});
+          return;
         }
+      }
+   }
+
+    rotatePieceClockwise() {
+      if (this.state.piece===undefined) return;
+      const [oldPiece, oldTopRow, oldLeftCol] = [this.state.piece, this.state.pieceTopRow, this.state.pieceLeftCol];
+      const centerRow = oldTopRow + Math.floor(oldPiece.length/2);
+      const centerCol = oldLeftCol + Math.floor(oldPiece[0].length/2);
+      const[newRows, newCols] = [oldPiece[0].length, oldPiece.length];
+      const newPiece = rotate2dListClockwise(oldPiece);
+      const newTopRow = centerRow - Math.floor(newRows/2);
+      const newLeftCol = centerCol - Math.floor(newCols/2);
+      if (this.moveIsLegal(newPiece,newLeftCol, newTopRow)) this.setState({piece: newPiece, pieceLeftCol: newLeftCol, pieceTopRow: newTopRow});
     }
-
-    movePiece(drow: number, dcol: number): [boolean, string[], number, number] {
-        if (this.piece===undefined) return [false, [], -1, -1];
-        const board = this.clearPrevPiece(this.state.boardState) as string[];
-        let [newLeftCol, newTopRow]= [this.pieceLeftCol+dcol, this.pieceTopRow+drow];
-
-        if (!this.moveIsLegal(board, this.piece, newLeftCol, newTopRow)) return [false, [], -1, -1];
-
-        for (let row = 0; row < this.piece.length; row++){
-            for (let col = 0; col< this.piece[0].length; col++){
-                let idxInBoard = rc_idx(row+newTopRow,col+newLeftCol,this.state.cols);
-                if (this.piece[row][col]) board[idxInBoard] = this.pieceColor;
-          }
+    moveIsLegal(piece: boolean[][], newLefCol: number, newTopRow: number){
+      if (newTopRow + piece.length > this.state.rows) return false;
+      if (newTopRow<0 || newLefCol<0) return false;
+      for(let row = 0; row<piece.length; row++){
+        for (let col = 0; col< piece[0].length; col++){
+          let idxInBoard = rc_idx(row+newTopRow,col+newLefCol,this.state.cols);
+          if (piece[row][col] && (col+newLefCol>=this.state.cols || 
+                                  this.state.boardState[idxInBoard]!=='')) return false;
         }
-        return [true, board, newLeftCol, newTopRow];
+      }
+      return true;
     }
-
-    checkGameOver(board: string[]): boolean{
-        for(let col = 0; col< this.state.cols; col++) {
-            if (board[col]!=='') return true;
-        }
-        return false;
-    }
-
-    moveIsLegal(board: string[], piece: boolean[][], leftCol: number, topRow: number): boolean{
-        if (topRow + piece.length > this.state.rows) return false;
-        if (topRow<0 || leftCol<0) return false;
-        for(let row = 0; row<piece.length; row++){
-          for (let col = 0; col< piece[0].length; col++){
-            let idxInBoard = rc_idx(row+topRow,col+leftCol,this.state.cols);
-            if (piece[row][col] && (col+leftCol>=this.state.cols || 
-                                    board[idxInBoard]!=='')) return false;
-          }
-        }
-        return true;
-    }
-
-    rotatePieceClockwise(): [string[]|undefined,boolean[][], number,number]{
-        if (this.piece===undefined) return[undefined,[],-1,-1];
-        const [oldPiece, oldTopRow, oldLeftCol] = [this.piece, this.pieceTopRow, this.pieceLeftCol];
-        const centerRow = oldTopRow + Math.floor(oldPiece.length/2);
-        const centerCol = oldLeftCol + Math.floor(oldPiece[0].length/2);
-        const[newRows, newCols] = [oldPiece[0].length, oldPiece.length];
-        const newPiece = rotate2dListClockwise(oldPiece);
-        const newTopRow = centerRow - Math.floor(newRows/2);
-        const newLeftCol = centerCol - Math.floor(newCols/2);
-        
-        const board = this.clearPrevPiece(this.state.boardState) as string[];
     
-        if (this.moveIsLegal(board,newPiece,newLeftCol, newTopRow)){
-            for (let row = 0; row < newPiece.length; row++){
-                for (let col = 0; col< newPiece[0].length; col++){
-                    let idxInBoard = rc_idx(row+newTopRow,col+newLeftCol,this.state.cols);
-                    if (newPiece[row][col]) board[idxInBoard] = this.pieceColor;
-                }
-            }
-            return [board,newPiece,newLeftCol,newTopRow];
-        }
-        return [undefined,[],-1,-1];
-    }
-
     renderBoard(): JSX.Element[]{
+      //console.log('renderBoard...');
         let cells = [];
     
         for(let r = 0; r < this.state.rows; r++){
@@ -347,6 +275,22 @@ class Board extends React.Component<BoardProps, BoardState>{
                 cells.push(cell);
             }
         }
+
+        //console.log('render piece...');
+        const piece = this.state.piece
+        if (piece!==undefined){
+          for (let r =0; r<piece.length; r++){
+            for (let c = 0; c<piece[0].length; c++){
+              if(piece[r][c]){
+                let idxInBoard = rc_idx(r+this.state.pieceTopRow, c+this.state.pieceLeftCol, this.state.cols);
+                let cell = <Cell
+                  value = {this.state.pieceColor}
+                  key = {idxInBoard.toString() + this.state.pieceColor}/>
+                cells[idxInBoard] = cell;
+              }
+            }
+          }
+        }    
         return cells;
     }
     render(){
@@ -371,12 +315,6 @@ class Board extends React.Component<BoardProps, BoardState>{
             this.setState({boardState: newBoard, rows: newRows});
           }
         }
-
-        
-        //  = (newLevel: 'easy'| 'medium' | 'hard' | 'expert') =>{
-        //   console.log(newLevel);
-        //   if (newLevel!=null) this.setState({level: newLevel});
-        // }
         //const maxCols = Math.floor(window.innerWidth/2/34);
         
         const items: MenuProps['items'] = [
@@ -420,18 +358,22 @@ class Board extends React.Component<BoardProps, BoardState>{
                   
                   <div className = 'DarkModeButton'>
                     <button className = 'dark-mode-toggle'
-                              onClick = {()=>this.handleDarkMode()}
+                              onMouseDown= {()=>this.handleDarkMode()}
+                              onMouseUp = {()=>{}}
                               > {colorMode} </button>
                     </div>
                   <div className = 'NewGame'>
                     <button className = 'NewGameButton'
-                        onClick = {()=>this.newGame()}>
+                        onMouseDown = {()=>this.newGame()}
+                        onMouseUp = {()=>{}}>
                             Click or Press 'n' or 'N' for new game
                     </button>
                   </div>
                   <div className = 'HandlePause'>
                     <button className = 'HandlePauseButton'
-                      onClick = {()=>{this.handlePause()}}>
+                      onMouseDown = {()=>{this.handlePause()}}
+                      onMouseUp = {()=>{}}
+                      >
                               Click or Press spacebar to pause/unpause
                     </button>
                 </div> 
@@ -455,57 +397,24 @@ class Board extends React.Component<BoardProps, BoardState>{
     }
 }
 
-export default class TetrisApp extends React.Component<{},GameState>{
-  constructor(props: any){
-    super(props);
-    this.state={
-      // score: 0,
-      darkMode: true,
-      // gameOver: false,
-      // paused: true,
-    };
-    // this.updateScore = this.updateScore.bind(this);
-    // this.handleDarkMode = this.handleDarkMode.bind(this);
-    // this.updatePause = this.updatePause.bind(this);
-    // document.body.classList.add('dark');
-  }
+export default class TetrisApp extends React.Component<{},{}>{
+
+  render(){
+  const rows = 15;
+  const cols = 10;
+  const piecesInfo: tetrisPiecesOutput = loadPieces();
   
-
-  // updatePause(){
-  //   this.setState({paused: !this.state.paused});
-  // }
-
-  // updateGameOver(){
-  //   this.setState({paused: !this.state.gameOver});
-  // }
-
-  // updateScore(newScore: number){
-  //   this.setState({score: this.state.score + newScore});
-  // }
-
-  // handleDarkMode(): void{
-  //   if (this.state.darkMode) document.body.classList.remove('dark');
-  //   else document.body.classList.add('dark');
-  //   this.setState({darkMode: !this.state.darkMode});
-  // }
-
-    render(){
-    const rows = 15;
-    const cols = 10;
-    const piecesInfo: tetrisPiecesOutput = loadPieces();
-    
-    return <div className="App">
-        <div className = "TetrisHeader" > 
-            {'Welcome to Tetris!'} 
-        </div>
-        <Board
-          rows = {rows}
-          cols = {cols}
-          tetrisPieces = {piecesInfo[0]}
-          tetrisPieceColors = {piecesInfo[1]}
-          
-        />
+  return <div className="App">
+      <div className = "TetrisHeader" > 
+          {'Welcome to Tetris!'} 
       </div>
-    ;
+      <Board
+        rows = {rows}
+        cols = {cols}
+        tetrisPieces = {piecesInfo[0]}
+        tetrisPieceColors = {piecesInfo[1]}
+        
+      />
+    </div>
   }
 }
