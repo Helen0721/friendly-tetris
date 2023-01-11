@@ -1,46 +1,27 @@
-# Getting Started with Create React App
+![image](https://user-images.githubusercontent.com/116918111/211710476-fbea99ae-77b7-4c09-bf01-c030151293d1.png)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Friendly Tetris intends to be a fun kill-time game for busy people like you and me. I also view it as an opportunity to learn front-end tools like React. 
 
-## Available Scripts
+# Features
 
-In the project directory, you can run:
+This version of Tetris supports different levels for people with or without prior exposure to Tetris. To be fair, I am still struggling to last long in the hard-level. 
 
-### `npm start`
+To start or pause a game, press the spacebar or click the pause button. 
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+![start a game](https://user-images.githubusercontent.com/116918111/211713939-ff407fe7-9137-4174-9016-c23d19dce58b.gif)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+To move a piece, use the arrow keys. You can press 'enter' or 'return' to place a piece to the bottom. 
 
-### `npm test`
+To reset a game, press 'n' or click the new game button. 
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+To change the dimension of the board, use the input box at the top. 
 
-### `npm run build`
+![change dimension](https://user-images.githubusercontent.com/116918111/211714449-e1fc2ba2-fd01-4959-82a5-3d5590d2afe0.gif)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+To change current level, use the drop-down box next to the label "Level". 
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+![change level](https://user-images.githubusercontent.com/116918111/211714784-76f76611-60a7-4c2d-b6f5-b7395e85f57e.gif)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Have FUN!
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+# 
